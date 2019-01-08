@@ -113,8 +113,7 @@ func (m *manager) runDelete(client *firestore.Client, ctx context.Context, state
 	}
 	var rowCount = 0
 	for _, id := range ids {
-		pathRef := statement.Table + "/" + toolbox.AsString(id)
-		_, err := client.Doc(pathRef).Delete(ctx)
+		_, err :=  client.Collection(statement.Table).Doc(toolbox.AsString(id)).Delete(ctx)
 		if err != nil {
 			return 0, err
 		}
