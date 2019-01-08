@@ -17,9 +17,7 @@ func getTestConfig(t *testing.T) (*dsc.Config, error) {
 	projectID := getEnvValue("testFireBaseProjectID", "abstractdb-154a9")
 	//	storageBucket := getEnvValue("testFireBaseStorageBucket", "abstractdb-154a9.appspot.com")
 	return dsc.NewConfigWithParameters("fsc", "", "abstractdb", map[string]interface{}{
-		//"databaseURL": databaseURL,
 		"projectID": projectID,
-		//	"storageBucket": storageBucket,
 	})
 }
 
