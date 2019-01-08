@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	storageBucketKey = "storageBucket"
 	projectIDKey     = "projectID"
 	databaseURLKey   = "databaseURL"
 	dbnameKey        = "dbname"
@@ -65,15 +64,10 @@ func (p *connectionProvider) NewConnection() (dsc.Connection, error) {
 	firebaseConfig := &firebase.Config{
 		DatabaseURL:   config.Get(databaseURLKey),
 		ProjectID:     config.Get(projectIDKey),
-		StorageBucket: config.Get(storageBucketKey),
 	}
 	if firebaseConfig.ProjectID == "" {
 		return nil, errors.New("projectID was empty")
 	}
-	//if firebaseConfig.StorageBucket == "" {
-	//	return nil, errors.New("storageBucket was empty")
-	//}
-
 	var credentials option.ClientOption
 	if config.Credentials != "" {
 		credentials = option.WithCredentialsFile(config.Credentials)
@@ -81,6 +75,7 @@ func (p *connectionProvider) NewConnection() (dsc.Connection, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	var conn = &connection{ctx: &ctx, cancelCtx: cancel}
+
 	if firebaseConfig.DatabaseURL != "" {
 		app, err := firebase.NewApp(ctx, firebaseConfig, credentials)
 		if err != nil {
