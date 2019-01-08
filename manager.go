@@ -1,4 +1,4 @@
-package fbc
+package fsc
 
 import (
 	"cloud.google.com/go/firestore"
@@ -96,7 +96,7 @@ func (m *manager) runDelete(client *firestore.Client, ctx context.Context, state
 	}
 	if len(criteriaMap) == 0 {
 		pathRef := statement.Table
-		_, err  = client.Doc(pathRef).Delete(ctx)
+		_, err = client.Doc(pathRef).Delete(ctx)
 		return 0, err
 	}
 
@@ -114,7 +114,7 @@ func (m *manager) runDelete(client *firestore.Client, ctx context.Context, state
 	var rowCount = 0
 	for _, id := range ids {
 		pathRef := statement.Table + "/" + toolbox.AsString(id)
-		_, err  := client.Doc(pathRef).Delete(ctx)
+		_, err := client.Doc(pathRef).Delete(ctx)
 		if err != nil {
 			return 0, err
 		}
@@ -213,14 +213,13 @@ func (m *manager) ReadAllOnWithHandlerOnConnection(connection dsc.Connection, SQ
 			}
 		}
 	} else if len(criteriaMap) == 0 {
-		app, ctx, err := asApp(connection)
-		store, err := app.Firestore(ctx)
+		store, ctx, err := asClient(connection)
 		if err != nil {
 			return err
 		}
 		iter := store.Collection(statement.Table).Documents(ctx)
 
-		for ; ; {
+		for {
 
 			doc, err := iter.Next()
 			if err != nil {

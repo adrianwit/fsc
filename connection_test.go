@@ -1,4 +1,4 @@
-package fbc_test
+package fsc_test
 
 import (
 	_ "github.com/adrianwit/fbc"

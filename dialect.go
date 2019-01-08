@@ -1,4 +1,4 @@
-package fbc
+package fsc
 
 import (
 	"github.com/viant/dsc"
@@ -26,11 +26,7 @@ func (d *dialect) GetColumns(manager dsc.Manager, datastore, table string) ([]ds
 		return result, err
 	}
 	defer connection.Close()
-	app, ctx, err := asApp(connection)
-	if err != nil {
-		return result, err
-	}
-	client, err := app.Firestore(ctx)
+	client, ctx, err := asClient(connection)
 	if err != nil {
 		return result, err
 	}
@@ -96,11 +92,10 @@ func (d *dialect) GetTables(manager dsc.Manager, datastore string) ([]string, er
 		return result, err
 	}
 	defer connection.Close()
-	app, ctx, err := asApp(connection)
+	store, ctx, err := asClient(connection)
 	if err != nil {
 		return result, err
 	}
-	store, err := app.Firestore(ctx)
 	iter := store.Collections(ctx)
 	if err != nil {
 		return result, err

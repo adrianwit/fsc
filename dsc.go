@@ -1,4 +1,4 @@
-package fbc
+package fsc
 
 import (
 	"github.com/viant/dsc"

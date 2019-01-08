@@ -1,4 +1,4 @@
-package fbc_test
+package fsc_test
 
 import (
 	"github.com/viant/dsc"
@@ -13,12 +13,12 @@ func getTestConfig(t *testing.T) (*dsc.Config, error) {
 		t.Skip("skipping, not test credential not configured")
 		return nil, nil
 	}
-	databaseURL := getEnvValue("testFireBaseDatabaseURL", "https://abstractdb-154a9.firebaseio.com")
+	//databaseURL := getEnvValue("testFireBaseDatabaseURL", "https://abstractdb-154a9.firebaseio.com")
 	projectID := getEnvValue("testFireBaseProjectID", "abstractdb-154a9")
 	//	storageBucket := getEnvValue("testFireBaseStorageBucket", "abstractdb-154a9.appspot.com")
 	return dsc.NewConfigWithParameters("fsc", "", "abstractdb", map[string]interface{}{
-		"databaseURL": databaseURL,
-		"projectID":   projectID,
+		//"databaseURL": databaseURL,
+		"projectID": projectID,
 		//	"storageBucket": storageBucket,
 	})
 }

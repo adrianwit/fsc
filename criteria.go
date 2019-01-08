@@ -1,4 +1,4 @@
-package fbc
+package fsc
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package fbc
+package fsc
 
 import (
 	"errors"
@@ -14,9 +14,9 @@ func (f *managerFactory) Create(config *dsc.Config) (dsc.Manager, error) {
 	super := dsc.NewAbstractManager(config, connectionProvider, self)
 	manager.AbstractManager = super
 	var err error
-	dbname := config.Get(databaseURLKey)
+	dbname := config.GetString(dbnameKey, "default")
 	if dbname == "" {
-		return nil, errors.New("databaseURL was empty")
+		return nil, errors.New("dbname was empty")
 	}
 	manager.config, err = newConfig(config)
 	manager.config.dbName = dbname

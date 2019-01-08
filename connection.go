@@ -1,4 +1,4 @@
-package fbc
+package fsc
 
 import (
 	"cloud.google.com/go/firestore"
@@ -15,6 +15,7 @@ const (
 	storageBucketKey = "storageBucket"
 	projectIDKey     = "projectID"
 	databaseURLKey   = "databaseURL"
+	dbnameKey        = "dbname"
 )
 
 //AppPointer represents an app pointer context key
@@ -32,15 +33,8 @@ func asClient(connection dsc.Connection) (*firestore.Client, context.Context, er
 	return client, *ctx, nil
 }
 
-func asApp(connection dsc.Connection) (*firebase.App, context.Context, error) {
-	client := connection.Unwrap(AppPointerKey).(*firebase.App)
-	ctx := connection.Unwrap(ContextPointerKey).(*context.Context)
-	return client, *ctx, nil
-}
-
 type connection struct {
 	*dsc.AbstractConnection
-	app       *firebase.App
 	client    *firestore.Client
 	ctx       *context.Context
 	cancelCtx context.CancelFunc
@@ -53,9 +47,7 @@ func (c *connection) CloseNow() error {
 }
 
 func (c *connection) Unwrap(targetType interface{}) interface{} {
-	if targetType == AppPointerKey {
-		return c.app
-	} else if targetType == ClientPointerKey {
+	if targetType == ClientPointerKey {
 		return c.client
 	} else if targetType == ContextPointerKey {
 		return c.ctx
@@ -69,14 +61,11 @@ type connectionProvider struct {
 
 func (p *connectionProvider) NewConnection() (dsc.Connection, error) {
 	config := p.ConnectionProvider.Config()
-
+	var err error
 	firebaseConfig := &firebase.Config{
 		DatabaseURL:   config.Get(databaseURLKey),
 		ProjectID:     config.Get(projectIDKey),
 		StorageBucket: config.Get(storageBucketKey),
-	}
-	if firebaseConfig.DatabaseURL == "" {
-		return nil, errors.New("databaseURL was empty")
 	}
 	if firebaseConfig.ProjectID == "" {
 		return nil, errors.New("projectID was empty")
@@ -90,21 +79,28 @@ func (p *connectionProvider) NewConnection() (dsc.Connection, error) {
 		credentials = option.WithCredentialsFile(config.Credentials)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	app, err := firebase.NewApp(ctx, firebaseConfig, credentials)
-	if err != nil {
-		return nil, err
-	}
 
-	client, err := app.Firestore(ctx)
-	if err != nil {
-		return nil, err
+	var conn = &connection{ctx: &ctx, cancelCtx: cancel}
+	if firebaseConfig.DatabaseURL != "" {
+		app, err := firebase.NewApp(ctx, firebaseConfig, credentials)
+		if err != nil {
+			return nil, err
+		}
+		conn.client, err = app.Firestore(ctx)
+		if err != nil {
+			return nil, err
+		}
+		_, conn.dbName = toolbox.URLSplit(firebaseConfig.DatabaseURL)
+	} else {
+		conn.client, err = firestore.NewClient(ctx, firebaseConfig.ProjectID, credentials)
+		if err != nil {
+			return nil, err
+		}
+		conn.dbName = config.Get(dbnameKey)
 	}
-	_, name := toolbox.URLSplit(firebaseConfig.DatabaseURL)
-	var mgoConnection = &connection{dbName: name, ctx: &ctx, cancelCtx: cancel, app: app, client: client}
-
-	var super = dsc.NewAbstractConnection(config, p.ConnectionProvider.ConnectionPool(), mgoConnection)
-	mgoConnection.AbstractConnection = super
-	return mgoConnection, nil
+	var super = dsc.NewAbstractConnection(config, p.ConnectionProvider.ConnectionPool(), conn)
+	conn.AbstractConnection = super
+	return conn, nil
 }
 
 func newConnectionProvider(config *dsc.Config) dsc.ConnectionProvider {

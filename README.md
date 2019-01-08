@@ -40,9 +40,13 @@ func main() {
 
     credentials := "secrets.json"
 	config, err := dsc.NewConfigWithParameters("fsc", "", credentials, map[string]interface{}{
-		"databaseURL":   databaseURL,
+		// specify databaseURL to use console.firebase.google.com scoped firestore, 
+		// otherwise it would use console.cloud.google.com/firestore
+		"databaseURL":   databaseURL, 
  		"projectID":     projectID,
  	})
+	
+	
 	if err != nil {
 		log.Fatal(err)
     }

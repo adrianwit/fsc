@@ -1,4 +1,4 @@
-package fbc_test
+package fsc_test
 
 import (
 	"fmt"
@@ -17,6 +17,7 @@ type User struct {
 func TestManager(t *testing.T) {
 	config, err := getTestConfig(t)
 	if config == nil {
+		log.Print(err)
 		return
 	}
 	if !assert.Nil(t, err) {
@@ -25,6 +26,7 @@ func TestManager(t *testing.T) {
 	factory := dsc.NewManagerFactory()
 	manager, err := factory.Create(config)
 	if err != nil {
+		log.Print(err)
 		return
 	}
 
@@ -33,7 +35,7 @@ func TestManager(t *testing.T) {
 	_ = dialect.DropTable(manager, "", "users")
 	for i := 0; i < 3; i++ {
 		sqlResult, err := manager.Execute("INSERT INTO users(id, name) VALUES(?, ?)", i, fmt.Sprintf("Name %d", i))
-		if ! assert.Nil(t, err) {
+		if !assert.Nil(t, err) {
 			fmt.Print(err)
 			return
 		}
