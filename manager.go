@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/viant/dsc"
 	"github.com/viant/toolbox"
+	"github.com/viant/toolbox/data"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc"
@@ -70,15 +71,45 @@ func (m *manager) update(client *firestore.Client, ctx context.Context, statemen
 	}
 	pathRef := statement.Table //+ "/" + toolbox.AsString(id)
 	ref := client.Collection(pathRef).Doc(toolbox.AsString(id))
+	var nodeValues = data.NewMap()
+	var nodeKeys = make(map[string]bool)
 	if len(record) > 0 {
 		var updates = make([]firestore.Update, 0)
 		for k, v := range record {
+			if strings.Contains(k, ".") {
+				node := string(k[:strings.LastIndex(k, ".")])
+				nodeKeys[node] = true
+				fmt.Printf("setting %v %v\n", k, v)
+				nodeValues.SetValue(k, v)
+				continue
+			}
 			updates = append(updates, firestore.Update{
-				Path:  strings.Replace(k, ".", "/", len(k)),
+				Path:  k,
 				Value: v,
 			})
 		}
-		_, err = ref.Update(ctx, updates)
+		if len(updates) > 0 {
+			if _, err = ref.Update(ctx, updates);err != nil {
+				return err
+			}
+		}
+
+
+		for key := range nodeKeys {
+			absolutePathRef := statement.Table +"/" + ref.ID + "/" + strings.Replace(key, ".", "/", len(key))
+			value, _ := nodeValues.GetValue(key)
+			valueMap := value.(map[string]interface{})
+			if snapshot, err := client.Doc(absolutePathRef).Get(ctx);err == nil && snapshot.Exists() {
+				for k, v := range snapshot.Data() {
+					if _, ok := valueMap[k];!ok {
+						valueMap[k] = v
+					}
+				}
+			}
+			if _, err = client.Doc(absolutePathRef).Set(ctx, value);err != nil {
+				break
+			}
+		}
 	}
 	return err
 }
@@ -96,7 +127,8 @@ func (m *manager) runDelete(client *firestore.Client, ctx context.Context, state
 	}
 	if len(criteriaMap) == 0 {
 		pathRef := statement.Table
-		_, err = client.Doc(pathRef).Delete(ctx)
+		docRef := client.Doc(pathRef + "/*")
+		_, err := docRef.Delete(ctx)
 		return 0, err
 	}
 
